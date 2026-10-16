@@ -1,7 +1,4 @@
-packages:
-  - "apps/*"
-  - "packages/*"
-
+# Single project (no workspace packages). This file only holds pnpm settings.
 allowBuilds:
   esbuild: true
   sharp: false

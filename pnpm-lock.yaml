@@ -165,15 +165,6 @@ settings:
 importers:
 
   .:
-    devDependencies:
-      '@swc/core':
-        specifier: 1.16.18
-        version: 1.16.18
-      dependency-cruiser:
-        specifier: 18.6.0
-        version: 18.6.0
-
-  apps/agent:
     dependencies:
       '@vercel/connect':
         specifier: 2.2.0
@@ -188,42 +179,21 @@ importers:
         specifier: 4.5.4
         version: 4.5.4
     devDependencies:
+      '@swc/core':
+        specifier: 1.16.18
+        version: 1.16.18
       '@types/node':
         specifier: 24.x
         version: 24.19.2
-      typescript:
-        specifier: 7.0.2
-        version: 7.0.2
-
-  packages/collections:
-    dependencies:
-      '@sme-treasury-agent/money':
-        specifier: workspace:*
-        version: link:../money
-    devDependencies:
-      '@sme-treasury-agent/tsconfig':
-        specifier: workspace:*
-        version: link:../tsconfig
+      dependency-cruiser:
+        specifier: 18.6.0
+        version: 18.6.0
       typescript:
         specifier: 7.0.2
         version: 7.0.2
       vitest:
         specifier: 5.0.4
         version: 5.0.4(@types/node@24.19.2)(vite@8.3.4(@types/node@24.19.2))
-
-  packages/money:
-    devDependencies:
-      '@sme-treasury-agent/tsconfig':
-        specifier: workspace:*
-        version: link:../tsconfig
-      typescript:
-        specifier: 7.0.2
-        version: 7.0.2
-      vitest:
-        specifier: 5.0.4
-        version: 5.0.4(@types/node@24.19.2)(vite@8.3.4(@types/node@24.19.2))
-
-  packages/tsconfig: {}
 
 packages:
 

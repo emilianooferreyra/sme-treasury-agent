@@ -1,4 +1,4 @@
-import { CurrencyMismatchError, money } from "@sme-treasury-agent/money/money";
+import { CurrencyMismatchError, money } from "#core/money/money";
 import { describe, expect, it } from "vitest";
 import { applyPayment, createCharge } from "./charge";
 

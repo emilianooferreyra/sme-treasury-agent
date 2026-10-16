@@ -33,7 +33,7 @@ Ana runs a clothing shop in Córdoba.
 ## Deterministic core vs LLM
 
 Most of the flow is deterministic and must stay that way. The agent is not sold as "autonomous": the LLM works at
-the edges, the rules live in `packages/domain`.
+the edges, the rules live in each feature's `domain/` (`src/features/<feature>/domain`).
 
 | Deterministic (domain, test-first) | LLM (where it adds value) |
 |---|---|
@@ -74,10 +74,10 @@ proposal is revisited.
 ### Phase 1: collect (read-only on-chain, **no private key**)
 
 In:
-1. `packages/domain`: charge lifecycle, matching, amount owed and reminder rules. Pure TypeScript, test-first.
+1. Feature domains (`src/features/charges`, `reconciliation`, `reminders`): charge lifecycle, matching, amount owed and reminder rules. Pure TypeScript, test-first.
 2. Charge link generation for `ramp.ripio.com`.
 3. Detection of incoming wARS transfers to the business address(es) with viem over read-only RPC.
-4. eve agent (`apps/agent`) with tools to create charges, list them, report status and resolve ambiguous matches;
+4. eve agent (`agent/`) with tools to create charges, list them, report status and resolve ambiguous matches;
    scheduled reconciliation; one channel (Telegram or web).
 
 ### Phase 2: pay suppliers in BRL (**requires a funded wallet**)
@@ -88,7 +88,7 @@ wallet with a low balance cap.
 In:
 1. Supplier registry (name, Celo address for wBRL; supplier withdraws via `ramp.ripio.com/offramp`).
 2. Payment of a BRL amount: wARS → USD₮ → wBRL via Textile FX, then wBRL transfer to the supplier.
-3. Limits enforced in `packages/domain`: per-payment cap, daily cap, allow-listed suppliers only.
+3. Limits enforced in `src/features/payouts/domain`: per-payment cap, daily cap, allow-listed suppliers only.
 4. Human approval (eve `approval`) for any payment above a threshold, and always for a new supplier.
 5. Quote shown before execution (rate, slippage, fees); execution aborts if the quote moves beyond a tolerance.
 
@@ -124,7 +124,7 @@ store and never returned by any tool output.
 
 ## Risks
 
-- eve is beta → business rules stay in `packages/domain`; eve tools are thin adapters.
+- eve is beta → business rules stay in `src/features/*/domain`; eve tools are thin adapters that call a feature's `index.ts`.
 - Ramp behaviour is controlled by Ripio and undocumented for third-party addresses → V1 first.
 - Payer KYC inside Ripio reduces conversion and is outside our control.
 - Ramp fees and settlement time are unknown → measured in V1/V2 and shown to the owner.
@@ -143,3 +143,7 @@ store and never returned by any tool output.
 - 2026-10-16: part B restored as **phase 2**, gated by V5 and an explicit wallet decision. The legal argument was
   overweighted for a learning project moving the owner's own funds in small amounts; the remaining blockers are
   technical (Textile integration/liquidity, signing with real funds).
+- 2026-10-16: layout changed to a **single project organized by features** (feature-based architecture):
+  `agent/` (eve), `src/features/<feature>/{domain,application,infrastructure,index.ts}`, `src/core/` (money, chain,
+  config), `fixtures/`. Turborepo and the multi-package workspace were removed as unjustified for one person and one
+  deployable. Boundaries enforced by dependency-cruiser (`pnpm lint:deps`).

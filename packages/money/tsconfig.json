@@ -1,4 +1,0 @@
-{
-  "extends": "@sme-treasury-agent/tsconfig/base.json",
-  "include": ["src/**/*.ts"]
-}

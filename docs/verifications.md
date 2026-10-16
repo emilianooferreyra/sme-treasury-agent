@@ -43,8 +43,8 @@ strong evidence, but the first real tool in the repo should be exercised end to 
 policy: pin `eve` to `0.79.1`, delete the lockfile, reinstall (fresh resolution picks versions older than the cutoff).
 Rule for the repo: pin eve to an exact version and keep the supply-chain policy on.
 
-**Implication for the layout.** The planned structure holds: `apps/agent` (eve) imports `@repo/domain` through
-`workspace:*`; `packages/domain` can export TypeScript source directly (internal package, no build step).
+**Implication for the layout.** eve bundles imported application code. The project later moved to a single package
+(feature-based, `src/features/*`), where `agent/tools` import features via `#features/*` subpath imports.
 
 ## V4: wARS on a Celo testnet (refuted)
 
@@ -62,7 +62,7 @@ deployment exists. Asking Ripio would settle it.
 
 **Implication for testing.**
 
-1. `packages/domain`: unit tests with no chain at all (TDD core), so most tests are unaffected.
+1. Feature `domain/` folders and `src/core`: unit tests with no chain at all (TDD core), so most tests are unaffected.
 2. Chain adapter (read `Transfer` events): tests against **recorded mainnet fixtures** (real logs saved as JSON) and/or a
    **local fork of Celo mainnet** (e.g. anvil `--fork-url`), read-only, no keys.
 3. A mock ERC-20 on Celo Sepolia would need a deployer key (testnet, no real value). This is optional and the

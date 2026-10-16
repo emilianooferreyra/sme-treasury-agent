@@ -1,18 +1,40 @@
 {
   "name": "sme-treasury-agent",
+  "version": "0.0.0",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@12.10.1",
   "engines": {
     "node": "24.x"
   },
+  "imports": {
+    "#core/*": "./src/core/*.ts",
+    "#features/*": "./src/features/*.ts",
+    "#*": "./agent/*",
+    "#evals/*": "./evals/*"
+  },
   "scripts": {
-    "test": "pnpm -r test",
-    "typecheck": "pnpm -r typecheck",
-    "lint:deps": "depcruise packages apps --config .dependency-cruiser.cjs"
+    "dev": "eve dev",
+    "build": "eve build",
+    "start": "eve start",
+    "deploy": "eve deploy",
+    "eval": "eve eval",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc",
+    "lint:deps": "depcruise agent src --config .dependency-cruiser.cjs"
+  },
+  "dependencies": {
+    "@vercel/connect": "2.2.0",
+    "ai": "7.0.137",
+    "eve": "0.79.1",
+    "zod": "4.5.4"
   },
   "devDependencies": {
     "@swc/core": "1.16.18",
-    "dependency-cruiser": "18.6.0"
+    "@types/node": "24.x",
+    "dependency-cruiser": "18.6.0",
+    "typescript": "7.0.2",
+    "vitest": "5.0.4"
   }
 }

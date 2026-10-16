@@ -6,7 +6,10 @@ coverage/
 # eve
 .eve/
 .output/
+.nitro/
+.next/
 .vercel/
+*.tsbuildinfo
 
 # secrets: never commit keys or env files
 .env

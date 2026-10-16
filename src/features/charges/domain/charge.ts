@@ -1,4 +1,4 @@
-import { equals, type Money } from "@sme-treasury-agent/money/money";
+import { equals, type Money } from "#core/money/money";
 
 export type ChargeStatus = "pending" | "paid";
 
