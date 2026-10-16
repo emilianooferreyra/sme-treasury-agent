@@ -8,6 +8,11 @@
   },
   "scripts": {
     "test": "pnpm -r test",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "lint:deps": "depcruise packages apps --config .dependency-cruiser.cjs"
+  },
+  "devDependencies": {
+    "@swc/core": "1.16.18",
+    "dependency-cruiser": "18.6.0"
   }
 }

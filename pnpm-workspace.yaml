@@ -5,3 +5,5 @@ packages:
 allowBuilds:
   esbuild: true
   sharp: false
+  # Not needed: @swc/core ships a prebuilt binary through optional dependencies.
+  "@swc/core": false
