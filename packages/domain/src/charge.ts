@@ -1,10 +1,10 @@
 export type ChargeStatus = "pending" | "paid";
 
-export type Charge = {
+export type Charge = Readonly<{
   id: string;
   amount: bigint;
   status: ChargeStatus;
-};
+}>;
 
 export function createCharge(input: { id: string; amount: bigint }): Charge {
   return {
