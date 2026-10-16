@@ -188,7 +188,11 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
 
-  packages/domain:
+  packages/collections:
+    dependencies:
+      '@sme-treasury-agent/money':
+        specifier: workspace:*
+        version: link:../money
     devDependencies:
       '@sme-treasury-agent/tsconfig':
         specifier: workspace:*

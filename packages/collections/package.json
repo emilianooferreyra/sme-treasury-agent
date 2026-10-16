@@ -1,5 +1,5 @@
 {
-  "name": "@sme-treasury-agent/domain",
+  "name": "@sme-treasury-agent/collections",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -15,5 +15,8 @@
     "@sme-treasury-agent/tsconfig": "workspace:*",
     "typescript": "7.0.2",
     "vitest": "5.0.4"
+  },
+  "dependencies": {
+    "@sme-treasury-agent/money": "workspace:*"
   }
 }
