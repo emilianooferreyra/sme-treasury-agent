@@ -146,4 +146,5 @@ store and never returned by any tool output.
 - 2026-10-16: layout changed to a **single project organized by features** (feature-based architecture):
   `agent/` (eve), `src/features/<feature>/{domain,application,infrastructure,index.ts}`, `src/core/` (money, chain,
   config), `fixtures/`. Turborepo and the multi-package workspace were removed as unjustified for one person and one
-  deployable. Boundaries enforced by dependency-cruiser (`pnpm lint:deps`).
+  deployable. Feature boundaries are a convention (features talk through `index.ts`; `domain/` never imports
+  infrastructure), checked in review. No extra tooling until there is evidence it is needed.

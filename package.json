@@ -10,8 +10,7 @@
   "imports": {
     "#core/*": "./src/core/*.ts",
     "#features/*": "./src/features/*.ts",
-    "#*": "./agent/*",
-    "#evals/*": "./evals/*"
+    "#*": "./agent/*"
   },
   "scripts": {
     "dev": "eve dev",
@@ -21,8 +20,7 @@
     "eval": "eve eval",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc",
-    "lint:deps": "depcruise agent src --config .dependency-cruiser.cjs"
+    "typecheck": "tsc"
   },
   "dependencies": {
     "@vercel/connect": "2.2.0",
@@ -31,9 +29,7 @@
     "zod": "4.5.4"
   },
   "devDependencies": {
-    "@swc/core": "1.16.18",
     "@types/node": "24.x",
-    "dependency-cruiser": "18.6.0",
     "typescript": "7.0.2",
     "vitest": "5.0.4"
   }
