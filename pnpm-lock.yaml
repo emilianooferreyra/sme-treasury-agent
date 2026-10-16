@@ -200,6 +200,18 @@ importers:
         specifier: 5.0.4
         version: 5.0.4(@types/node@24.19.2)(vite@8.3.4(@types/node@24.19.2))
 
+  packages/money:
+    devDependencies:
+      '@sme-treasury-agent/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
+      vitest:
+        specifier: 5.0.4
+        version: 5.0.4(@types/node@24.19.2)(vite@8.3.4(@types/node@24.19.2))
+
   packages/tsconfig: {}
 
 packages:
