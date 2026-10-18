@@ -2,10 +2,10 @@ import {
   ChargeNotFoundError,
   chargesRuntime,
   PaymentSimulationUnavailableError,
-} from "../../../../../src/features/charges";
+} from "@/features/charges";
 
 /** Fakes the payer's transfer. Only works with PAYMENTS_MODE=simulated: no real money moves. */
-export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(_request: Request, { params }: RouteContext<"/api/charges/[id]/simulate-payment">) {
   const { id } = await params;
 
   try {

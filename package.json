@@ -13,7 +13,7 @@
     "eval": "eve eval",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc"
+    "typecheck": "next typegen && tsc"
   },
   "dependencies": {
     "@ai-sdk/groq": "4.0.59",

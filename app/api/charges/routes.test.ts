@@ -8,7 +8,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 // points DATA_DIR at a fresh folder and reloads the modules.
 async function loadRoutes() {
   vi.resetModules();
-  const charges = await import("../../../src/features/charges");
+  const charges = await import("@/features/charges");
   const status = await import("./route");
   const simulate = await import("./[id]/simulate-payment/route");
   return { feature: charges.chargesRuntime().feature, status, simulate };
