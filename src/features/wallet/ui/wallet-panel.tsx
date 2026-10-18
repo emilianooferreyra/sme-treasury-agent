@@ -3,19 +3,22 @@
 import { ExternalLink, LoaderCircle, LogOut, Wallet } from "lucide-react";
 import { erc20Abi } from "viem";
 import { celo } from "viem/chains";
-import { useConnect, useConnection, useDisconnect, useReadContract } from "wagmi";
-import { injected } from "wagmi/connectors";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
+import { useAccount, useDisconnect, useReadContract } from "wagmi";
 import { Badge } from "@/core/ui/badge";
 import { Button } from "@/core/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/core/ui/card";
 import { formatWarsBalance, shortAddress } from "../wallet-display";
 import { WARS_TOKEN } from "../../../core/celo/wars-token";
 
-/** Connect a browser wallet and see its real wARS balance on Celo. Read-only: nothing is signed. */
+/**
+ * The business connects the wallet its charges arrive at, and sees its real wARS balance on Celo.
+ * Read-only: nothing is signed.
+ */
 export function WalletPanel() {
-  const { address, isConnected } = useConnection();
-  const connect = useConnect();
-  const disconnect = useDisconnect();
+  const { address, isConnected } = useAccount();
+  const { openConnectModal, connectModalOpen } = useConnectModal();
+  const { disconnect } = useDisconnect();
   const balance = useReadContract({
     address: WARS_TOKEN,
     abi: erc20Abi,
@@ -26,30 +29,20 @@ export function WalletPanel() {
   });
 
   if (!isConnected || !address) {
+    // The modal (RainbowKit) lists the wallets and explains what a wallet is; this button opens it.
+    // openConnectModal is undefined until RainbowKit is ready.
     return (
-      <div className="grid justify-items-center gap-2">
-        <Button
-          size="lg"
-          variant="outline"
-          disabled={connect.isPending}
-          onClick={() => connect.mutate({ connector: injected() })}
-        >
-          {connect.isPending ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : <Wallet aria-hidden="true" />}
-          Conectar billetera
-        </Button>
-        {connect.error && (
-          <p role="alert" className="text-sm text-destructive">
-            No se pudo conectar. ¿Tenés una billetera como MetaMask o Rabby en este navegador?
-          </p>
-        )}
-      </div>
+      <Button size="lg" variant="outline" disabled={!openConnectModal || connectModalOpen} onClick={openConnectModal}>
+        {connectModalOpen ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : <Wallet aria-hidden="true" />}
+        Conectar billetera
+      </Button>
     );
   }
 
   return (
     <Card size="sm" className="w-full max-w-sm text-left">
       <CardHeader>
-        <CardDescription>Tu billetera</CardDescription>
+        <CardDescription>Tus cobros llegarán a</CardDescription>
         <CardTitle className="font-mono">{shortAddress(address)}</CardTitle>
         <CardAction>
           <Badge variant="secondary">Celo</Badge>
@@ -75,7 +68,7 @@ export function WalletPanel() {
             Ver en Celoscan <ExternalLink aria-hidden="true" />
           </a>
         </Button>
-        <Button variant="ghost" size="sm" onClick={() => disconnect.mutate()}>
+        <Button variant="ghost" size="sm" onClick={() => disconnect()}>
           <LogOut aria-hidden="true" /> Desconectar
         </Button>
       </CardFooter>

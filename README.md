@@ -26,7 +26,7 @@ Celo mainnet (read-only, nothing is signed).
 | Agent | [eve](https://eve.dev) (Vercel) with two typed tools, `create_charge` and `list_charges` |
 | Model | `openai/gpt-oss-120b` on Groq, through the AI SDK |
 | Web | Next.js 16 (App Router), React 19, Tailwind CSS 4, shadcn/ui, Motion |
-| Chain | Celo mainnet, viem + wagmi (read-only) |
+| Chain | Celo mainnet, viem + wagmi, RainbowKit for connecting wallets (read-only) |
 | Payments | Ripio ramp link, or a simulated checkout for demos |
 | Tests | Vitest, written first (TDD) and checked with mutations |
 
@@ -48,7 +48,7 @@ src/
       application/          use cases (create charge, reconcile payments) and ports
       infrastructure/       Ripio link, simulated checkout, on-chain reader, file and in-memory adapters
       ui/                   charge card, payer phone, checkout, receipt
-    wallet/                 wagmi config, wARS balance (read-only)
+    wallet/                 RainbowKit wallet modal, wARS balance (read-only)
 ```
 
 Some decisions worth calling out:
@@ -76,6 +76,7 @@ Create `.env.local` (it is git-ignored):
 | Variable | Required | Description |
 | --- | --- | --- |
 | `GROQ_API_KEY` | yes | Groq API key for the model |
+| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | for the wallet | WalletConnect project id from [Reown](https://dashboard.reown.com), so mobile wallets like Valora can connect. Not a secret: it ships to the browser and is restricted by the domains allowed in the dashboard |
 | `PAYMENTS_MODE` | no | `simulated` (default) or `ripio` |
 | `BUSINESS_ADDRESS` | with `ripio` | Celo address that receives wARS |
 | `START_BLOCK` | no | With `ripio`: Celo block to start watching payments from. Default: the current block, so only new payments count |

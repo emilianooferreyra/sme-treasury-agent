@@ -46,10 +46,10 @@ export default function HomePage() {
       <section aria-labelledby="your-wallet" className="grid justify-items-center gap-4 text-center">
         <div className="grid gap-1">
           <h2 id="your-wallet" className="text-2xl font-semibold tracking-tight">
-            Tu saldo real en Celo
+            Dónde recibís tus cobros
           </h2>
           <p className="text-muted-foreground">
-            Conectá tu billetera y mirá cuántos wARS tenés. Solo lectura: no firmás nada.
+            Conectá la billetera donde querés recibir y mirá tu saldo en wARS. Solo lectura: no firmás nada.
           </p>
         </div>
         <WalletSection />

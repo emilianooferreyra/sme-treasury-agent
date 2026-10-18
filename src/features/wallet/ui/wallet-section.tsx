@@ -24,5 +24,15 @@ const WalletWidget = dynamic(() => import("./wallet-widget").then((module) => mo
 
 /** The landing's wallet: connect and see the real wARS balance on Celo, without slowing the page down. */
 export function WalletSection() {
-  return <WalletWidget />;
+  // Written out in full: Next.js inlines NEXT_PUBLIC_ variables at build time only on literal access.
+  const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
+  if (!projectId) {
+    // Without it mobile wallets cannot connect; say so, and skip downloading the wallet code.
+    return (
+      <p className="text-sm text-muted-foreground">
+        La conexión de billeteras no está configurada en este entorno.
+      </p>
+    );
+  }
+  return <WalletWidget projectId={projectId} />;
 }

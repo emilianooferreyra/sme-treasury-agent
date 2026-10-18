@@ -3,10 +3,10 @@
 import { WalletPanel } from "./wallet-panel";
 import { WalletProviders } from "./wallet-providers";
 
-/** The wallet panel with wagmi around it: the heavy part, loaded on its own by WalletSection. */
-export function WalletWidget() {
+/** The wallet panel with wagmi and RainbowKit around it: the heavy part, loaded on its own by WalletSection. */
+export function WalletWidget({ projectId }: { projectId: string }) {
   return (
-    <WalletProviders>
+    <WalletProviders projectId={projectId}>
       <WalletPanel />
     </WalletProviders>
   );
