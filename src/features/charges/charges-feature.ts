@@ -1,7 +1,7 @@
 import { fromDecimalString, toDecimalString } from "../../core/money/money";
 import { createChargeUseCase } from "./application/create-charge";
-import type { ChargeRepository, PaymentLinkBuilder, PaymentSimulator } from "./application/ports";
-import { reconcilePaymentsUseCase } from "./application/reconcile-payments";
+import type { ChargeRepository, PaymentLinkBuilder, PaymentSimulator, TransferSource } from "./application/ports";
+import { type ReconciliationReport, reconcilePaymentsUseCase } from "./application/reconcile-payments";
 import type { Charge, ChargeStatus } from "./domain/charge";
 
 export class ChargeNotFoundError extends Error {
@@ -45,7 +45,10 @@ export function createChargesFeature(deps: {
   now?: () => Date;
   /** Present only in simulated mode. */
   simulator?: PaymentSimulator;
+  /** Where real transfers come from (the chain) in ripio mode. */
+  transfers?: TransferSource;
 }) {
+  const transfers = deps.transfers ?? deps.simulator;
   const createCharge = createChargeUseCase({
     charges: deps.charges,
     buildPaymentLink: deps.buildPaymentLink,
@@ -75,6 +78,13 @@ export function createChargesFeature(deps: {
     return charge;
   }
 
+  async function syncPayments(): Promise<ReconciliationReport> {
+    if (!transfers) {
+      return { paid: [], unmatched: [], ambiguous: [] };
+    }
+    return reconcilePaymentsUseCase({ charges: deps.charges, transfers })();
+  }
+
   return {
     async createCharge(input: {
       requestId: string;
@@ -86,6 +96,9 @@ export function createChargesFeature(deps: {
       const result = await createCharge({ ...input, amount: fromDecimalString(input.amount, "wARS") });
       return { ...toView(result.charge), created: result.created };
     },
+
+    /** Reconciles the transfers that arrived (on-chain, or simulated) with the pending charges. */
+    syncPayments,
 
     async getCharge(id: string): Promise<ChargeView | undefined> {
       const charge = await deps.charges.findById(id);

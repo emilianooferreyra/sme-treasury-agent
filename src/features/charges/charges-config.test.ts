@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { chargesConfigFromEnv, InvalidBusinessAddressError, InvalidPaymentsModeError } from "./charges-config";
+import {
+  chargesConfigFromEnv,
+  InvalidBusinessAddressError,
+  InvalidPaymentsModeError,
+  InvalidStartBlockError,
+} from "./charges-config";
 
 const CWD = "/project";
 const ADDRESS = "0x000000000000000000000000000000000000dEaD";
@@ -37,6 +42,18 @@ describe("chargesConfigFromEnv", () => {
       expect(() => chargesConfigFromEnv(env, CWD)).toThrow(InvalidBusinessAddressError);
     },
   );
+
+  it("reads the block to start watching payments from, when given", () => {
+    const env = { PAYMENTS_MODE: "ripio", BUSINESS_ADDRESS: ADDRESS, START_BLOCK: "80385000" };
+
+    expect(chargesConfigFromEnv(env, CWD)).toMatchObject({ mode: "ripio", startBlock: 80_385_000n });
+  });
+
+  it.each(["-1", "1.5", "abc", "1e9"])("refuses %j as a start block", (startBlock) => {
+    const env = { PAYMENTS_MODE: "ripio", BUSINESS_ADDRESS: ADDRESS, START_BLOCK: startBlock };
+
+    expect(() => chargesConfigFromEnv(env, CWD)).toThrow(InvalidStartBlockError);
+  });
 
   it("refuses an unknown payments mode instead of guessing", () => {
     expect(() => chargesConfigFromEnv({ PAYMENTS_MODE: "real" }, CWD)).toThrow(InvalidPaymentsModeError);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { InvalidAmountError } from "../../core/money/money";
-import type { PaymentLinkBuilder } from "./application/ports";
+import { fromDecimalString, InvalidAmountError } from "../../core/money/money";
+import type { PaymentLinkBuilder, TransferSource } from "./application/ports";
 import {
   ChargeNotFoundError,
   createChargesFeature,
@@ -71,6 +71,33 @@ describe("charges feature", () => {
 
     expect(await charges.getCharge("C-0001")).toMatchObject({ id: "C-0001", status: "pending" });
     expect(await charges.getCharge("C-9999")).toBeUndefined();
+  });
+
+  describe("syncPayments", () => {
+    it("marks charges paid from the transfers the chain reports", async () => {
+      const amount = fromDecimalString("85000", "wARS");
+      const chain: TransferSource = {
+        listIncoming: async () => [{ id: "0xabc:0", amount, receivedAt: "2026-10-18T01:10:53.000Z" }],
+      };
+      const charges = createChargesFeature({
+        charges: new InMemoryChargeRepository(),
+        buildPaymentLink: fakeLink,
+        now: () => CREATED_AT,
+        transfers: chain,
+      });
+      await charges.createCharge(request);
+
+      const report = await charges.syncPayments();
+
+      expect(report.paid).toEqual(["C-0001"]);
+      expect(await charges.getCharge("C-0001")).toMatchObject({ status: "paid", paidBy: "0xabc:0" });
+    });
+
+    it("does nothing when there is no source of transfers", async () => {
+      const charges = createChargesFeature({ charges: new InMemoryChargeRepository(), buildPaymentLink: fakeLink });
+
+      expect(await charges.syncPayments()).toEqual({ paid: [], unmatched: [], ambiguous: [] });
+    });
   });
 
   describe("simulated payments", () => {

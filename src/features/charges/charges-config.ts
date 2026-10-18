@@ -1,11 +1,27 @@
 import { join } from "node:path";
 import { type ChargesFeature, createChargesFeature } from "./charges-feature";
+import { FileScanStore } from "./infrastructure/onchain/file-scan-store";
+import { OnchainTransferSource } from "./infrastructure/onchain/onchain-transfer-source";
+import { viemTransferLogReader } from "./infrastructure/onchain/viem-transfer-log-reader";
 import { FileChargeRepository } from "./infrastructure/file-charge-repository";
 import { FileSimulatedTransferSource } from "./infrastructure/file-simulated-transfer-source";
 import { ripioRampLinkBuilder } from "./infrastructure/ripio-ramp-link";
 import { simulatedCheckoutLinkBuilder } from "./infrastructure/simulated-checkout-link";
 
 const ADDRESS_PATTERN = /^0x[0-9a-fA-F]{40}$/;
+const BLOCK_PATTERN = /^\d+$/;
+
+// On-chain reading: blocks to wait before trusting a transfer, blocks per RPC query (forno accepts
+// 5000), and the minimum time between chain reads when the charge cards poll.
+const CONFIRMATIONS = 3n;
+const CHUNK_SIZE = 5_000n;
+const MIN_READ_INTERVAL_MS = 10_000;
+
+type Address = `0x${string}`;
+
+function isAddress(value: string | undefined): value is Address {
+  return value !== undefined && ADDRESS_PATTERN.test(value);
+}
 const DEFAULT_APP_URL = "http://localhost:3000";
 
 export class InvalidBusinessAddressError extends Error {
@@ -24,9 +40,16 @@ export class InvalidPaymentsModeError extends Error {
   }
 }
 
+export class InvalidStartBlockError extends Error {
+  constructor(value: string) {
+    super(`START_BLOCK must be a block number, got "${value}"`);
+    this.name = "InvalidStartBlockError";
+  }
+}
+
 export type ChargesConfig =
   | Readonly<{ mode: "simulated"; appUrl: string; dataDir: string }>
-  | Readonly<{ mode: "ripio"; recipient: string; dataDir: string }>;
+  | Readonly<{ mode: "ripio"; recipient: Address; dataDir: string; startBlock?: bigint }>;
 
 /** Reads the charges configuration. Simulated is the default, so a demo never touches real money. */
 export function chargesConfigFromEnv(env: Readonly<Record<string, string | undefined>>, cwd: string): ChargesConfig {
@@ -38,10 +61,17 @@ export function chargesConfigFromEnv(env: Readonly<Record<string, string | undef
   }
   if (mode === "ripio") {
     const recipient = env.BUSINESS_ADDRESS;
-    if (!recipient || !ADDRESS_PATTERN.test(recipient)) {
+    if (!isAddress(recipient)) {
       throw new InvalidBusinessAddressError(recipient);
     }
-    return { mode, recipient, dataDir };
+    const startBlock = env.START_BLOCK;
+    if (startBlock === undefined || startBlock === "") {
+      return { mode, recipient, dataDir };
+    }
+    if (!BLOCK_PATTERN.test(startBlock)) {
+      throw new InvalidStartBlockError(startBlock);
+    }
+    return { mode, recipient, dataDir, startBlock: BigInt(startBlock) };
   }
   throw new InvalidPaymentsModeError(mode);
 }
@@ -57,5 +87,16 @@ export function chargesFeatureFromConfig(config: ChargesConfig): ChargesFeature 
       simulator: new FileSimulatedTransferSource(join(config.dataDir, "simulated-transfers.json")),
     });
   }
-  return createChargesFeature({ charges, buildPaymentLink: ripioRampLinkBuilder({ recipient: config.recipient }) });
+  return createChargesFeature({
+    charges,
+    buildPaymentLink: ripioRampLinkBuilder({ recipient: config.recipient }),
+    transfers: new OnchainTransferSource({
+      reader: viemTransferLogReader({ recipient: config.recipient }),
+      store: new FileScanStore(join(config.dataDir, "onchain-scan.json")),
+      ...(config.startBlock === undefined ? {} : { startBlock: config.startBlock }),
+      confirmations: CONFIRMATIONS,
+      chunkSize: CHUNK_SIZE,
+      minIntervalMs: MIN_READ_INTERVAL_MS,
+    }),
+  });
 }

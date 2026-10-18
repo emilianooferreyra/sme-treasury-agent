@@ -135,4 +135,14 @@ describe("receiptFor", () => {
   it("marks only simulated payments as simulated", () => {
     expect(receiptFor({ ...PAID, paidBy: "0xabc:3" })?.simulated).toBe(false);
   });
+
+  it("links a real payment to its transaction on Celoscan, the proof anyone can check", () => {
+    const txHash = "0x96826333ef7ebc965b53850659251b13eee6ed17c49887ed63f4090e722511a0";
+
+    expect(receiptFor({ ...PAID, paidBy: `${txHash}:0` })?.explorerUrl).toBe(`https://celoscan.io/tx/${txHash}`);
+  });
+
+  it("has no explorer link for a simulated payment", () => {
+    expect(receiptFor(PAID)?.explorerUrl).toBeUndefined();
+  });
 });

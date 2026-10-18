@@ -1,4 +1,6 @@
+import { ExternalLink } from "lucide-react";
 import { Badge } from "@/core/ui/badge";
+import { Button } from "@/core/ui/button";
 import type { Receipt } from "./charge-card-model";
 import { SuccessCheck } from "./success-check";
 
@@ -42,6 +44,13 @@ export function ReceiptView({ receipt }: { receipt: Receipt }) {
           </div>
         ))}
       </dl>
+      {receipt.explorerUrl && (
+        <Button asChild variant="outline" size="sm" className="justify-self-center">
+          <a href={receipt.explorerUrl} target="_blank" rel="noreferrer">
+            Ver la transacción en Celoscan <ExternalLink aria-hidden="true" />
+          </a>
+        </Button>
+      )}
     </article>
   );
 }

@@ -89,6 +89,8 @@ export type Receipt = Readonly<{
   method: string;
   /** A simulated receipt must say so: it is never proof of a real payment. */
   simulated: boolean;
+  /** For a real payment, its transaction on Celoscan: the proof anyone can check. */
+  explorerUrl?: string;
 }>;
 
 const ARGENTINA_TIME = new Intl.DateTimeFormat("es-AR", {
@@ -113,6 +115,9 @@ export function receiptFor(charge: ChargeView): Receipt | undefined {
   if (charge.status !== "paid" || charge.paidAt === undefined || charge.paidBy === undefined) {
     return undefined;
   }
+  const simulated = charge.paidBy.startsWith("simulated-");
+  // On-chain transfer ids are `${txHash}:${logIndex}`.
+  const txHash = charge.paidBy.split(":")[0];
   return {
     reference: charge.id,
     operation: charge.paidBy,
@@ -121,6 +126,7 @@ export function receiptFor(charge: ChargeView): Receipt | undefined {
     description: charge.description,
     amount: formatArs(charge.amount),
     method: "Ripio · wARS en Celo",
-    simulated: charge.paidBy.startsWith("simulated-"),
+    simulated,
+    ...(simulated || !txHash ? {} : { explorerUrl: `https://celoscan.io/tx/${txHash}` }),
   };
 }
