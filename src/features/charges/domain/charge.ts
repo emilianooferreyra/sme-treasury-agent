@@ -89,12 +89,14 @@ export function applyPayment(charge: Charge, transfer: IncomingTransfer): Charge
 /**
  * Finds the pending charge a transfer pays. The ramp link carries no order reference, so
  * the amount is the only key: when two pending charges share it, the transfer is ambiguous
- * and a person decides. Money is never assigned by guessing.
+ * and a person decides. Money is never assigned by guessing, and a transfer only pays charges
+ * that already existed when it arrived.
  */
 export function matchTransfer(charges: readonly Charge[], transfer: IncomingTransfer): TransferMatch {
   const candidates = charges.filter(
     (charge) =>
       charge.status === "pending" &&
+      Date.parse(charge.createdAt) <= Date.parse(transfer.receivedAt) &&
       charge.amount.currency === transfer.amount.currency &&
       equals(charge.amount, transfer.amount),
   );

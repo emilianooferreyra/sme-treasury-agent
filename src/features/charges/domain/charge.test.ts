@@ -106,6 +106,13 @@ describe("matchTransfer", () => {
     expect(matchTransfer([paid], aTransfer({ id: "tx-1" }))).toEqual({ kind: "unmatched" });
   });
 
+  it("never pays a charge created after the transfer arrived", () => {
+    const charge = aCharge({ createdAt: "2026-10-18T10:00:00.000Z" });
+    const earlierTransfer = aTransfer({ receivedAt: "2026-10-17T22:00:00.000Z" });
+
+    expect(matchTransfer([charge], earlierTransfer)).toEqual({ kind: "unmatched" });
+  });
+
   it("treats a transfer in another currency as unmatched instead of failing", () => {
     const transfer = aTransfer({ amount: money(85_000n * UNIT, "wBRL") });
 
