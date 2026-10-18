@@ -100,6 +100,74 @@ describe("charges feature", () => {
     });
   });
 
+  describe("listCharges", () => {
+    async function withCharges(amounts: string[]) {
+      const charges = feature();
+      for (const [index, amount] of amounts.entries()) {
+        await charges.createCharge({ ...request, requestId: `session-1:turn-${index}`, amount });
+      }
+      return charges;
+    }
+
+    it("lists the newest charges first", async () => {
+      const charges = await withCharges(["1000", "2000", "3000"]);
+
+      const { charges: listed } = await charges.listCharges({});
+
+      expect(listed.map((charge) => charge.id)).toEqual(["C-0003", "C-0002", "C-0001"]);
+    });
+
+    it("filters by status and adds up what the filtered charges are worth", async () => {
+      const charges = await withCharges(["1000", "2000.5", "3000"]);
+      await charges.simulatePayment("C-0003");
+
+      const pending = await charges.listCharges({ status: "pending" });
+
+      expect(pending.charges.map((charge) => charge.id)).toEqual(["C-0002", "C-0001"]);
+      expect(pending).toMatchObject({ count: 2, total: "3000.5" });
+    });
+
+    it("shows the latest payments, since it reconciles the transfers that arrived before listing", async () => {
+      const amount = fromDecimalString("85000", "wARS");
+      const chain: TransferSource = {
+        listIncoming: async () => [{ id: "0xabc:0", amount, receivedAt: "2026-10-18T01:10:53.000Z" }],
+      };
+      const charges = createChargesFeature({
+        charges: new InMemoryChargeRepository(),
+        buildPaymentLink: fakeLink,
+        now: () => CREATED_AT,
+        transfers: chain,
+      });
+      await charges.createCharge(request);
+
+      const { charges: listed } = await charges.listCharges({});
+
+      expect(listed[0]).toMatchObject({ id: "C-0001", status: "paid" });
+    });
+
+    it("returns at most the limit, while the count and total still cover every match", async () => {
+      const charges = await withCharges(["1000", "2000", "3000"]);
+
+      const result = await charges.listCharges({ limit: 2 });
+
+      expect(result.charges.map((charge) => charge.id)).toEqual(["C-0003", "C-0002"]);
+      expect(result).toMatchObject({ count: 3, total: "6000" });
+    });
+
+    it("returns the newest 20 by default, so a long history does not flood the model", async () => {
+      const charges = await withCharges(Array.from({ length: 21 }, () => "1000"));
+
+      const result = await charges.listCharges({});
+
+      expect(result.charges).toHaveLength(20);
+      expect(result.count).toBe(21);
+    });
+
+    it("reports zero when there is nothing to list", async () => {
+      expect(await feature().listCharges({ status: "paid" })).toEqual({ charges: [], count: 0, total: "0" });
+    });
+  });
+
   describe("simulated payments", () => {
     it("pays the charge through the same reconciliation real payments use, with receipt data", async () => {
       const charges = feature();

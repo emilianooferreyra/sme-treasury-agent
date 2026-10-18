@@ -1,8 +1,8 @@
-import { fromDecimalString, toDecimalString } from "../../core/money/money";
+import { fromDecimalString, money, toDecimalString } from "../../core/money/money";
 import { createChargeUseCase } from "./application/create-charge";
 import type { ChargeRepository, PaymentLinkBuilder, PaymentSimulator, TransferSource } from "./application/ports";
 import { type ReconciliationReport, reconcilePaymentsUseCase } from "./application/reconcile-payments";
-import type { Charge, ChargeStatus } from "./domain/charge";
+import { type Charge, type ChargeStatus, newestFirst } from "./domain/charge";
 
 export class ChargeNotFoundError extends Error {
   constructor(id: string) {
@@ -35,6 +35,17 @@ export type ChargeView = Readonly<{
   /** Only on creation: false when the same request already created it (a safe retry). */
   created?: boolean;
 }>;
+
+export type ChargeList = Readonly<{
+  /** The newest matching charges, up to the limit. */
+  charges: readonly ChargeView[];
+  /** How many charges match, beyond the limit too. */
+  count: number;
+  /** What every matching charge is worth together, as a decimal string. */
+  total: string;
+}>;
+
+const DEFAULT_LIST_LIMIT = 20;
 
 export type SimulatedPaymentOutcome = "paid" | "already-paid" | "ambiguous";
 
@@ -103,6 +114,23 @@ export function createChargesFeature(deps: {
     async getCharge(id: string): Promise<ChargeView | undefined> {
       const charge = await deps.charges.findById(id);
       return charge && toView(charge);
+    },
+
+    /**
+     * The business's charges, newest first. It reconciles first, so a payment that already
+     * arrived shows as paid instead of pending.
+     */
+    async listCharges(filter: { status?: ChargeStatus | undefined; limit?: number }): Promise<ChargeList> {
+      await syncPayments();
+      const matching = newestFirst(await deps.charges.list()).filter(
+        (charge) => filter.status === undefined || charge.status === filter.status,
+      );
+      const total = matching.reduce((sum, charge) => sum + charge.amount.amount, 0n);
+      return {
+        charges: matching.slice(0, filter.limit ?? DEFAULT_LIST_LIMIT).map(toView),
+        count: matching.length,
+        total: toDecimalString(money(total, "wARS")),
+      };
     },
 
     /** Fakes the payer's transfer, then runs the same reconciliation real transfers go through. */

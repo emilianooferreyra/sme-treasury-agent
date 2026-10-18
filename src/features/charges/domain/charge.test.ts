@@ -6,6 +6,7 @@ import {
   InvalidChargeAmountError,
   InvalidChargeDetailsError,
   matchTransfer,
+  newestFirst,
   nextChargeReference,
 } from "./charge";
 
@@ -117,6 +118,29 @@ describe("matchTransfer", () => {
     const transfer = aTransfer({ amount: money(85_000n * UNIT, "wBRL") });
 
     expect(matchTransfer([aCharge()], transfer)).toEqual({ kind: "unmatched" });
+  });
+});
+
+describe("newestFirst", () => {
+  it("puts the most recently created charge first", () => {
+    const older = aCharge({ id: "C-0001", createdAt: "2026-10-17T15:00:00.000Z" });
+    const newer = aCharge({ id: "C-0002", createdAt: "2026-10-18T09:00:00.000Z" });
+
+    expect(newestFirst([older, newer])).toEqual([newer, older]);
+  });
+
+  it("breaks a tie in time by the reference number, not its text (C-10000 is newer than C-9999)", () => {
+    const charges = [aCharge({ id: "C-9999" }), aCharge({ id: "C-10000" }), aCharge({ id: "C-0002" })];
+
+    expect(newestFirst(charges).map((charge) => charge.id)).toEqual(["C-10000", "C-9999", "C-0002"]);
+  });
+
+  it("does not reorder the original list", () => {
+    const charges = [aCharge({ id: "C-0001" }), aCharge({ id: "C-0002" })];
+
+    newestFirst(charges);
+
+    expect(charges.map((charge) => charge.id)).toEqual(["C-0001", "C-0002"]);
   });
 });
 

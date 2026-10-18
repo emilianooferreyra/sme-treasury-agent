@@ -110,11 +110,22 @@ export function matchTransfer(charges: readonly Charge[], transfer: IncomingTran
 
 const REFERENCE_PATTERN = /^C-(\d+)$/;
 
+/** The number in a C-nnnn reference, or 0 for any other id. */
+function referenceNumber(charge: Charge): number {
+  const number = REFERENCE_PATTERN.exec(charge.id)?.[1];
+  return number === undefined ? 0 : Number(number);
+}
+
 /** The reference for a new charge: one past the highest existing C-nnnn. */
 export function nextChargeReference(charges: readonly Charge[]): string {
-  const highest = charges.reduce((max, charge) => {
-    const number = REFERENCE_PATTERN.exec(charge.id)?.[1];
-    return number === undefined ? max : Math.max(max, Number(number));
-  }, 0);
+  const highest = charges.reduce((max, charge) => Math.max(max, referenceNumber(charge)), 0);
   return `C-${String(highest + 1).padStart(4, "0")}`;
+}
+
+/** Charges from the most recent; charges created in the same instant keep their reference order. */
+export function newestFirst(charges: readonly Charge[]): Charge[] {
+  return [...charges].sort(
+    (left, right) =>
+      right.createdAt.localeCompare(left.createdAt) || referenceNumber(right) - referenceNumber(left),
+  );
 }

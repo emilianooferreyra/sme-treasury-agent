@@ -23,7 +23,7 @@ Celo mainnet (read-only, nothing is signed).
 
 | Layer | Choice |
 | --- | --- |
-| Agent | [eve](https://eve.dev) (Vercel) with a single typed tool, `create_charge` |
+| Agent | [eve](https://eve.dev) (Vercel) with two typed tools, `create_charge` and `list_charges` |
 | Model | `openai/gpt-oss-120b` on Groq, through the AI SDK |
 | Web | Next.js 16 (App Router), React 19, Tailwind CSS 4, shadcn/ui, Motion |
 | Chain | Celo mainnet, viem + wagmi (read-only) |
@@ -94,6 +94,8 @@ pnpm typecheck    # TypeScript
 Built:
 
 - Charges with references, idempotent creation and the Ripio ramp link.
+- Asking the agent about charges ("¿quién me debe?"): it reconciles first, and the count and total come
+  from the code, not from the model's arithmetic.
 - Reconciliation with simulated payments, file storage, the two-sided demo and receipts.
 - In `ripio` mode, an on-chain reader of wARS `Transfer` events to the business address: it waits
   for confirmations, scans only new blocks, and real receipts link the transaction on Celoscan.
