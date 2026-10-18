@@ -10,7 +10,7 @@ const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-sans" });
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
 
 export const metadata: Metadata = {
-  title: "Cobros",
+  title: { template: "%s · Cobros en pesos", default: "Cobros en pesos" },
   description: "Asistente de cobros en pesos para PyMEs, sobre Celo y Ripio.",
 };
 
