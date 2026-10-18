@@ -5,6 +5,7 @@ import {
   applyPayment,
   InvalidChargeAmountError,
   InvalidChargeDetailsError,
+  isChargeReference,
   matchTransfer,
   newestFirst,
   nextChargeReference,
@@ -141,6 +142,16 @@ describe("newestFirst", () => {
     newestFirst(charges);
 
     expect(charges.map((charge) => charge.id)).toEqual(["C-0001", "C-0002"]);
+  });
+});
+
+describe("isChargeReference", () => {
+  it.each(["C-0001", "C-10000"])("accepts %s", (id) => {
+    expect(isChargeReference(id)).toBe(true);
+  });
+
+  it.each(["", "C-", "c-0001", "C-00a1", "order-123", " C-0001", "C-0001/../x"])("rejects %j", (id) => {
+    expect(isChargeReference(id)).toBe(false);
   });
 });
 

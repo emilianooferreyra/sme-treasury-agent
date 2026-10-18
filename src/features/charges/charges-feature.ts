@@ -116,6 +116,15 @@ export function createChargesFeature(deps: {
       return charge && toView(charge);
     },
 
+    /** Several charges with one repository read, for the cards' shared status poll. */
+    async getCharges(ids: readonly string[]): Promise<ChargeView[]> {
+      const byId = new Map((await deps.charges.list()).map((charge) => [charge.id, charge]));
+      return ids.flatMap((id) => {
+        const charge = byId.get(id);
+        return charge ? [toView(charge)] : [];
+      });
+    },
+
     /**
      * The business's charges, newest first. It reconciles first, so a payment that already
      * arrived shows as paid instead of pending.

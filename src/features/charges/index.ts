@@ -14,4 +14,5 @@ export {
   PaymentSimulationUnavailableError,
   type SimulatedPaymentOutcome,
 } from "./charges-feature";
+export { isChargeReference } from "./domain/charge";
 export { chargesRuntime } from "./runtime";

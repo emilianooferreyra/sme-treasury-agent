@@ -5,7 +5,7 @@ import {
   chargeFromPart,
   parseChargeView,
   paymentMessage,
-  pollResult,
+  pollStatusResult,
   receiptFor,
   whatsAppShareUrl,
 } from "./charge-card-model";
@@ -79,21 +79,25 @@ describe("parseChargeView", () => {
   });
 });
 
-describe("pollResult", () => {
-  it("updates the card with the latest charge", () => {
-    expect(pollResult(200, { ...CHARGE, status: "paid" })).toEqual({
-      kind: "update",
-      charge: { ...CHARGE, status: "paid" },
-    });
+describe("pollStatusResult", () => {
+  it("updates every charge the server returned", () => {
+    expect(pollStatusResult(["C-0007"], 200, { charges: [PAID] })).toEqual({ kind: "update", charges: [PAID], gone: [] });
   });
 
-  it("stops polling a charge that no longer exists, instead of asking forever", () => {
-    expect(pollResult(404, { error: "Charge not found" })).toEqual({ kind: "stop" });
+  it("reports the asked charges the server no longer has, so they stop being polled instead of asked forever", () => {
+    expect(pollStatusResult(["C-0007", "C-0099"], 200, { charges: [PAID] })).toMatchObject({ gone: ["C-0099"] });
+  });
+
+  it("skips an entry that is not a charge, without dropping the valid ones or calling its id gone", () => {
+    const result = pollStatusResult(["C-0007", "C-0008"], 200, { charges: [PAID, { id: "C-0008" }] });
+
+    expect(result).toEqual({ kind: "update", charges: [PAID], gone: [] });
   });
 
   it("retries on a server error or an unexpected body", () => {
-    expect(pollResult(500, {})).toEqual({ kind: "retry" });
-    expect(pollResult(200, { nope: true })).toEqual({ kind: "retry" });
+    expect(pollStatusResult(["C-0007"], 500, {})).toEqual({ kind: "retry" });
+    expect(pollStatusResult(["C-0007"], 200, { nope: true })).toEqual({ kind: "retry" });
+    expect(pollStatusResult(["C-0007"], 200, undefined)).toEqual({ kind: "retry" });
   });
 });
 

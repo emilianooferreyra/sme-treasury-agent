@@ -46,11 +46,14 @@ describe("demoReducer", () => {
     expect(state.charges["C-0007"]?.status).toBe("paid");
   });
 
+  it("registers the charge it sends, so the phone can show it without anything seen before", () => {
+    expect(stateWith({ type: "charge-sent", charge: PENDING }).charges["C-0007"]).toEqual(PENDING);
+  });
+
   it("sends the payment message to the customer's phone once, and shows the customer side", () => {
     const state = stateWith(
-      { type: "charge-seen", charge: PENDING },
-      { type: "charge-sent", chargeId: "C-0007" },
-      { type: "charge-sent", chargeId: "C-0007" },
+      { type: "charge-sent", charge: PENDING },
+      { type: "charge-sent", charge: PENDING },
     );
 
     expect(state.sent).toEqual(["C-0007"]);
@@ -60,8 +63,7 @@ describe("demoReducer", () => {
 
   it("opens the checkout in the phone when the customer taps a link they received", () => {
     const state = stateWith(
-      { type: "charge-seen", charge: PENDING },
-      { type: "charge-sent", chargeId: "C-0007" },
+      { type: "charge-sent", charge: PENDING },
       { type: "payment-link-opened", chargeId: "C-0007" },
     );
 
@@ -76,8 +78,7 @@ describe("demoReducer", () => {
 
   it("shows the receipt in the phone and marks the charge paid for the owner once the payment goes through", () => {
     const state = stateWith(
-      { type: "charge-seen", charge: PENDING },
-      { type: "charge-sent", chargeId: "C-0007" },
+      { type: "charge-sent", charge: PENDING },
       { type: "payment-link-opened", chargeId: "C-0007" },
       { type: "charge-paid", charge: PAID },
     );
@@ -88,8 +89,7 @@ describe("demoReducer", () => {
 
   it("reopens the receipt of a paid charge from the inbox", () => {
     const state = stateWith(
-      { type: "charge-seen", charge: PENDING },
-      { type: "charge-sent", chargeId: "C-0007" },
+      { type: "charge-sent", charge: PENDING },
       { type: "charge-paid", charge: PAID },
       { type: "phone-back" },
       { type: "receipt-opened", chargeId: "C-0007" },
@@ -100,8 +100,7 @@ describe("demoReducer", () => {
 
   it("has no receipt to open for a charge that is still pending", () => {
     const state = stateWith(
-      { type: "charge-seen", charge: PENDING },
-      { type: "charge-sent", chargeId: "C-0007" },
+      { type: "charge-sent", charge: PENDING },
       { type: "receipt-opened", chargeId: "C-0007" },
     );
 
@@ -110,8 +109,7 @@ describe("demoReducer", () => {
 
   it("goes back to the inbox from any phone screen", () => {
     const state = stateWith(
-      { type: "charge-seen", charge: PENDING },
-      { type: "charge-sent", chargeId: "C-0007" },
+      { type: "charge-sent", charge: PENDING },
       { type: "payment-link-opened", chargeId: "C-0007" },
       { type: "phone-back" },
     );

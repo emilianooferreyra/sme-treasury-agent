@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { fromDecimalString, InvalidAmountError } from "../../core/money/money";
 import type { PaymentLinkBuilder, TransferSource } from "./application/ports";
 import {
@@ -71,6 +71,28 @@ describe("charges feature", () => {
 
     expect(await charges.getCharge("C-0001")).toMatchObject({ id: "C-0001", status: "pending" });
     expect(await charges.getCharge("C-9999")).toBeUndefined();
+  });
+
+  describe("getCharges", () => {
+    it("returns the charges that exist among the ids, in the order asked, and skips the rest", async () => {
+      const charges = feature();
+      await charges.createCharge(request);
+      await charges.createCharge({ ...request, requestId: "session-1:turn-2" });
+
+      const found = await charges.getCharges(["C-0002", "C-9999", "C-0001"]);
+
+      expect(found.map((charge) => charge.id)).toEqual(["C-0002", "C-0001"]);
+    });
+
+    it("reads the repository once, however many charges it is asked for", async () => {
+      const repository = new InMemoryChargeRepository();
+      const list = vi.spyOn(repository, "list");
+      const charges = createChargesFeature({ charges: repository, buildPaymentLink: fakeLink });
+
+      await charges.getCharges(["C-0001", "C-0002", "C-0003"]);
+
+      expect(list).toHaveBeenCalledOnce();
+    });
   });
 
   describe("syncPayments", () => {

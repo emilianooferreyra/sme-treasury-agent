@@ -36,7 +36,7 @@ A single project organised by features, with ports and adapters inside each feat
 
 ```
 agent/                      eve agent: model, instructions, tools
-app/                        Next.js routes: landing, /demo, /pay/[id], /api/charges/[id]
+app/                        Next.js routes: landing, /demo, /pay/[id], /api/charges (status, simulated payment)
 src/
   core/
     money/                  Money as bigint base units, parsing and formatting (never `number`)

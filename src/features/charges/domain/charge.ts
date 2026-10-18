@@ -110,6 +110,11 @@ export function matchTransfer(charges: readonly Charge[], transfer: IncomingTran
 
 const REFERENCE_PATTERN = /^C-(\d+)$/;
 
+/** Whether an id is a charge reference (C-nnnn), e.g. before using one that came from a URL. */
+export function isChargeReference(id: string): boolean {
+  return REFERENCE_PATTERN.test(id);
+}
+
 /** The number in a C-nnnn reference, or 0 for any other id. */
 function referenceNumber(charge: Charge): number {
   const number = REFERENCE_PATTERN.exec(charge.id)?.[1];

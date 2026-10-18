@@ -9,51 +9,26 @@ import { Button } from "@/core/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/core/ui/card";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/core/ui/dialog";
 import type { ChargeView } from "../charges-feature";
-import { formatArs, pollResult, receiptFor } from "./charge-card-model";
+import { formatArs, receiptFor } from "./charge-card-model";
 import { useDemo } from "./demo-context";
 import { ReceiptView } from "./receipt-view";
 
-const POLL_INTERVAL_MS = 3000;
-
 /**
- * Keeps the shared demo state in sync with the server for one charge, so a payment made
- * elsewhere (the /pay page on another device) also reaches the card.
+ * The card's charge, kept current by the demo's shared status poll while it is pending, so a
+ * payment made elsewhere (the /pay page on another device) also reaches the card. The charge
+ * joins the shared state when the owner sends it (an event), not when the card renders: two
+ * cards of the same charge would otherwise overwrite each other's view after every render.
  */
 function useChargeSync(initial: ChargeView) {
-  const { state, dispatch } = useDemo();
+  const { state, dispatch, watch } = useDemo();
   const charge = state.charges[initial.id] ?? initial;
-  const [stopped, setStopped] = useState(false);
 
   useEffect(() => {
-    dispatch({ type: "charge-seen", charge: initial });
-  }, [dispatch, initial]);
-
-  useEffect(() => {
-    if (charge.status === "paid" || stopped) {
+    if (charge.status === "paid") {
       return;
     }
-    const controller = new AbortController();
-    const timer = setInterval(async () => {
-      try {
-        const response = await fetch(`/api/charges/${encodeURIComponent(charge.id)}`, {
-          signal: controller.signal,
-        });
-        const result = pollResult(response.status, await response.json().catch(() => undefined));
-        if (result.kind === "stop") {
-          setStopped(true);
-        } else if (result.kind === "update") {
-          dispatch({ type: "charge-seen", charge: result.charge });
-        }
-      } catch {
-        // A failed poll is retried on the next tick.
-      }
-    }, POLL_INTERVAL_MS);
-
-    return () => {
-      clearInterval(timer);
-      controller.abort();
-    };
-  }, [charge.id, charge.status, stopped, dispatch]);
+    return watch(charge.id);
+  }, [charge.id, charge.status, watch]);
 
   return { charge, sent: state.sent.includes(charge.id), dispatch };
 }
@@ -135,7 +110,7 @@ export function ChargeCard({ charge: initial }: { charge: ChargeView }) {
               <Button
                 disabled={sent}
                 variant={sent ? "secondary" : "default"}
-                onClick={() => dispatch({ type: "charge-sent", chargeId: charge.id })}
+                onClick={() => dispatch({ type: "charge-sent", charge })}
               >
                 {sent ? <Check aria-hidden="true" /> : <Send aria-hidden="true" />}
                 {sent ? `Enviado a ${firstName}` : `Enviar a ${firstName}`}

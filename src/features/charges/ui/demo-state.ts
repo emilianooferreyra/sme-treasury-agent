@@ -19,7 +19,8 @@ export type DemoState = Readonly<{
 
 export type DemoAction =
   | Readonly<{ type: "charge-seen"; charge: ChargeView }>
-  | Readonly<{ type: "charge-sent"; chargeId: string }>
+  /** The owner sent the payment message: it carries the charge so the phone can show it. */
+  | Readonly<{ type: "charge-sent"; charge: ChargeView }>
   | Readonly<{ type: "payment-link-opened"; chargeId: string }>
   | Readonly<{ type: "charge-paid"; charge: ChargeView }>
   | Readonly<{ type: "receipt-opened"; chargeId: string }>
@@ -57,7 +58,8 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
     case "charge-sent":
       return {
         ...state,
-        sent: state.sent.includes(action.chargeId) ? state.sent : [...state.sent, action.chargeId],
+        charges: upsert(state.charges, action.charge),
+        sent: state.sent.includes(action.charge.id) ? state.sent : [...state.sent, action.charge.id],
         phone: { screen: "inbox" },
         tab: "customer",
       };

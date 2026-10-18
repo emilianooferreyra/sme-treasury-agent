@@ -36,18 +36,31 @@ export function parseChargeView(value: unknown): ChargeView | undefined {
   };
 }
 
-export type PollResult =
-  | Readonly<{ kind: "update"; charge: ChargeView }>
-  | Readonly<{ kind: "stop" }>
+export type PollStatusResult =
+  | Readonly<{ kind: "update"; charges: readonly ChargeView[]; gone: readonly string[] }>
   | Readonly<{ kind: "retry" }>;
 
-/** What the card does with a status response: a missing charge ends polling for good. */
-export function pollResult(httpStatus: number, body: unknown): PollResult {
-  if (httpStatus === 404) {
-    return { kind: "stop" };
+function idOf(entry: unknown): string | undefined {
+  return typeof entry === "object" && entry !== null && "id" in entry && typeof entry.id === "string"
+    ? entry.id
+    : undefined;
+}
+
+/**
+ * What the shared status poll does with a response to `GET /api/charges?ids=…`: update the
+ * charges that came back, and stop asking for the ones the server no longer has.
+ */
+export function pollStatusResult(askedIds: readonly string[], httpStatus: number, body: unknown): PollStatusResult {
+  const entries = typeof body === "object" && body !== null && "charges" in body ? body.charges : undefined;
+  if (httpStatus !== 200 || !Array.isArray(entries)) {
+    return { kind: "retry" };
   }
-  const charge = httpStatus === 200 ? parseChargeView(body) : undefined;
-  return charge ? { kind: "update", charge } : { kind: "retry" };
+  const returned = new Set(entries.map(idOf));
+  return {
+    kind: "update",
+    charges: entries.flatMap((entry) => parseChargeView(entry) ?? []),
+    gone: askedIds.filter((id) => !returned.has(id)),
+  };
 }
 
 /** The charge a finished create_charge call returned, or undefined for any other part. */
