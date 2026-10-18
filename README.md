@@ -46,7 +46,7 @@ src/
     charges/
       domain/               charges, payment matching, references (C-0001…)
       application/          use cases (create charge, reconcile payments) and ports
-      infrastructure/       Ripio link, simulated checkout, file and in-memory adapters
+      infrastructure/       Ripio link, simulated checkout, on-chain reader, file and in-memory adapters
       ui/                   charge card, payer phone, checkout, receipt
     wallet/                 wagmi config, wARS balance (read-only)
 ```
@@ -59,7 +59,7 @@ Some decisions worth calling out:
   details, so a retried agent step returns the same charge instead of a duplicate.
 - **Reconciliation never guesses.** The ramp link carries no order reference, so the amount is the only
   key. If two pending charges share an amount, the transfer is flagged as ambiguous for a person to
-  assign.
+  assign, and a transfer only pays charges that existed when it arrived.
 - **Test mode is visible**, Stripe style: an orange strip across the app and a "Prueba" tag on every
   simulated receipt, so a screenshot cannot pass for a real payment.
 
@@ -78,6 +78,7 @@ Create `.env.local` (it is git-ignored):
 | `GROQ_API_KEY` | yes | Groq API key for the model |
 | `PAYMENTS_MODE` | no | `simulated` (default) or `ripio` |
 | `BUSINESS_ADDRESS` | with `ripio` | Celo address that receives wARS |
+| `START_BLOCK` | no | With `ripio`: Celo block to start watching payments from. Default: the current block, so only new payments count |
 | `APP_URL` | no | Base URL for simulated payment links. Default `http://localhost:3000` |
 | `DATA_DIR` | no | Where local demo data is stored. Default `./.data` |
 
@@ -94,11 +95,12 @@ Built:
 
 - Charges with references, idempotent creation and the Ripio ramp link.
 - Reconciliation with simulated payments, file storage, the two-sided demo and receipts.
+- In `ripio` mode, an on-chain reader of wARS `Transfer` events to the business address: it waits
+  for confirmations, scans only new blocks, and real receipts link the transaction on Celoscan.
 - A read-only wallet that shows the real wARS balance.
 
 Next:
 
-- Read real wARS `Transfer` events on Celo, so the `ripio` mode reconciles on its own.
 - Real persistence (Postgres) to deploy.
 
 Later, phase 2: paying suppliers in Brazil (wARS → USD₮ → wBRL), behind explicit limits and a
