@@ -7,8 +7,8 @@
   "scripts": {
     "dev": "next dev",
     "dev:agent": "eve dev --no-default-extensions",
-    "build": "eve build",
-    "start": "eve start",
+    "build": "eve build && next build",
+    "start": "next start",
     "deploy": "eve deploy",
     "eval": "eve eval",
     "test": "vitest run",

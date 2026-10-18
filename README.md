@@ -85,6 +85,8 @@ Create `.env.local` (it is git-ignored):
 ```sh
 pnpm dev          # web app and agent together, on http://localhost:3000
 pnpm dev:agent    # the agent alone, in eve's terminal chat
+pnpm build        # production build: the agent (eve build), then the web app (next build)
+pnpm start        # serve that build; Next.js starts the built agent and proxies /eve/v1/*
 pnpm test         # unit and integration tests
 pnpm typecheck    # TypeScript
 ```
