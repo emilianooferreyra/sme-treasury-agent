@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import { cn } from "@/core/lib/utils";
-import { chargesRuntime } from "../src/features/charges";
+import { isSimulatedMode } from "@/features/charges";
 import "./globals.css";
 
 // DM Sans comes from the shadcn preset; Geist Mono is for references and operation numbers.
@@ -15,7 +15,9 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
-  const testMode = chargesRuntime().config.mode === "simulated";
+  // Read at build time for static pages (the mode is a deployment setting), and never throws:
+  // a broken payments setup must not take down pages that do not charge, like the landing.
+  const testMode = isSimulatedMode(process.env);
 
   return (
     <html lang="es" className={cn(dmSans.variable, geistMono.variable, "font-sans")}>
