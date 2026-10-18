@@ -9,7 +9,7 @@ import { Badge } from "@/core/ui/badge";
 import { Button } from "@/core/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/core/ui/card";
 import { formatWarsBalance, shortAddress } from "../wallet-display";
-import { WARS_TOKEN } from "../wars-token";
+import { WARS_TOKEN } from "../../../core/celo/wars-token";
 
 /** Connect a browser wallet and see its real wARS balance on Celo. Read-only: nothing is signed. */
 export function WalletPanel() {
