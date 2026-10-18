@@ -2,7 +2,7 @@ import { ArrowRight, Landmark, MessageSquareText, Radar } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/core/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/core/ui/card";
-import { WalletPanel, WalletProviders } from "../src/features/wallet/ui";
+import { WalletSection } from "@/features/wallet/ui";
 
 const STEPS = [
   {
@@ -52,9 +52,7 @@ export default function HomePage() {
             Conectá tu billetera y mirá cuántos wARS tenés. Solo lectura: no firmás nada.
           </p>
         </div>
-        <WalletProviders>
-          <WalletPanel />
-        </WalletProviders>
+        <WalletSection />
       </section>
 
       <section aria-labelledby="how-it-works" className="grid gap-6">
