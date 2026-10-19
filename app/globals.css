@@ -7,7 +7,7 @@
 /* Theme from the shadcn preset (b1VlIvXU), plus our own tokens for success, test mode and the phone mock.
    Dark mode is class based (`.dark` on <html>), as the preset defines it. */
 :root {
-  --background: #f3f1ff; /* lavender, as in alcancia-seven.vercel.app */
+  --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);

@@ -5,7 +5,6 @@ export {
   chargesFeatureFromConfig,
   InvalidBusinessAddressError,
   InvalidPaymentsModeError,
-  isSimulatedMode,
 } from "./charges-config";
 export {
   ChargeNotFoundError,

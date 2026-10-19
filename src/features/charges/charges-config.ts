@@ -58,14 +58,6 @@ function paymentsMode(env: Env): string {
   return env.PAYMENTS_MODE || "simulated";
 }
 
-/**
- * Whether payments are simulated, without validating the rest of the configuration: pages that
- * only label test mode (the root layout) must not fail because the payments setup is wrong.
- */
-export function isSimulatedMode(env: Env): boolean {
-  return paymentsMode(env) === "simulated";
-}
-
 /** Reads the charges configuration. Simulated is the default, so a demo never touches real money. */
 export function chargesConfigFromEnv(env: Env, cwd: string): ChargesConfig {
   const dataDir = env.DATA_DIR || join(cwd, ".data");

@@ -32,7 +32,7 @@ export function WalletPanel() {
     // The modal (RainbowKit) lists the wallets and explains what a wallet is; this button opens it.
     // openConnectModal is undefined until RainbowKit is ready.
     return (
-      <Button size="lg" variant="outline" disabled={!openConnectModal || connectModalOpen} onClick={openConnectModal}>
+      <Button size="lg" variant="outline" className="cursor-pointer" disabled={!openConnectModal || connectModalOpen} onClick={openConnectModal}>
         {connectModalOpen ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : <Wallet aria-hidden="true" />}
         Conectar billetera
       </Button>

@@ -17,7 +17,7 @@ export default function OpengraphImage() {
         justifyContent: "center",
         gap: 28,
         padding: 96,
-        background: "#f3f1ff",
+        background: "#ffffff",
         color: "#171717",
       }}
     >

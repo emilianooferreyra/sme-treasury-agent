@@ -4,7 +4,6 @@ import {
   InvalidBusinessAddressError,
   InvalidPaymentsModeError,
   InvalidStartBlockError,
-  isSimulatedMode,
 } from "./charges-config";
 
 const CWD = "/project";
@@ -58,22 +57,5 @@ describe("chargesConfigFromEnv", () => {
 
   it("refuses an unknown payments mode instead of guessing", () => {
     expect(() => chargesConfigFromEnv({ PAYMENTS_MODE: "real" }, CWD)).toThrow(InvalidPaymentsModeError);
-  });
-});
-
-describe("isSimulatedMode", () => {
-  it("is simulated by default, like the charges configuration", () => {
-    expect(isSimulatedMode({})).toBe(true);
-    expect(isSimulatedMode({ PAYMENTS_MODE: "" })).toBe(true);
-    expect(isSimulatedMode({ PAYMENTS_MODE: "simulated" })).toBe(true);
-  });
-
-  it("is not simulated with the real ramp", () => {
-    expect(isSimulatedMode({ PAYMENTS_MODE: "ripio", BUSINESS_ADDRESS: ADDRESS })).toBe(false);
-  });
-
-  it("never throws, so a bad payments setup cannot take down pages that do not charge (the layout reads it)", () => {
-    expect(isSimulatedMode({ PAYMENTS_MODE: "ripio", BUSINESS_ADDRESS: "not-an-address" })).toBe(false);
-    expect(isSimulatedMode({ PAYMENTS_MODE: "real" })).toBe(false);
   });
 });
