@@ -1,16 +1,18 @@
 "use client";
 
 import { useEveAgent } from "eve/react";
-import { ArrowLeft, ArrowUp, LoaderCircle, Smartphone, Store } from "lucide-react";
+import { ArrowLeft, ArrowUp, Check, LoaderCircle, Smartphone, Store } from "lucide-react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import type { FormEvent } from "react";
 import { cn } from "@/core/lib/utils";
 import { Button } from "@/core/ui/button";
 import { Input } from "@/core/ui/input";
+import type { ChargeView } from "@/features/charges/charges-feature";
 import {
   ChargeCard,
   chargeFromPart,
+  chatSuggestions,
   DemoProvider,
   PayerPhone,
   useDemo,
@@ -96,10 +98,60 @@ function Demo() {
   );
 }
 
+const CAPABILITIES = [
+  { title: "Crear un link de cobro", detail: "para que se lo compartas a tu cliente. Decime a quién, por qué y cuánto." },
+  { title: "Fijarme cómo está un cobro,", detail: "por su número (C-0001) o por el nombre del cliente." },
+] as const;
+
+/** The agent's first message, written by the app: it costs no tokens and is always the same. */
+function Greeting() {
+  return (
+    <motion.div
+      role="note"
+      aria-label="Qué puede hacer el asistente"
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="grid max-w-[85%] gap-2 rounded-3xl rounded-bl-lg bg-card px-4 py-3 shadow-sm ring-1 ring-foreground/5"
+    >
+      <p>¡Hola! Soy tu asistente de cobros. Puedo:</p>
+      <ul className="grid gap-1.5">
+        {CAPABILITIES.map(({ title, detail }) => (
+          <li key={title} className="flex gap-2">
+            <Check className="mt-1 size-4 shrink-0 text-success" aria-hidden="true" />
+            <span>
+              <span className="font-medium">{title}</span> {detail}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="text-muted-foreground">
+        Cuando tu cliente paga, la tarjeta del cobro pasa a pagado sola. Tocá una sugerencia de abajo o escribime.
+      </p>
+    </motion.div>
+  );
+}
+
 function OwnerChat() {
   const agent = useEveAgent();
+  const { state } = useDemo();
   const isBusy = agent.status === "submitted" || agent.status === "streaming";
   const isResuming = agent.status === "resuming";
+
+  // Charges shown in the chat, with the latest status the demo knows (a payment updates it).
+  const charges = new Map<string, ChargeView>();
+  const asked: string[] = [];
+  for (const message of agent.data.messages) {
+    for (const part of message.parts) {
+      if (message.role === "user" && part.type === "text") {
+        asked.push(part.text);
+      }
+      const charge = part.type === "dynamic-tool" ? chargeFromPart(part) : undefined;
+      if (charge) {
+        charges.set(charge.id, state.charges[charge.id] ?? charge);
+      }
+    }
+  }
+  const suggestions = chatSuggestions({ charges: [...charges.values()], asked });
 
   function send(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -130,11 +182,7 @@ function OwnerChat() {
       </header>
 
       <div aria-live="polite" className="flex flex-col gap-4 py-5">
-        {agent.data.messages.length === 0 && (
-          <div className="rounded-3xl border border-dashed p-4 text-sm text-muted-foreground">
-            Probá con: <span className="text-foreground">«Cobrale $85.000 a Juan Pérez por 2 docenas de medialunas»</span>
-          </div>
-        )}
+        <Greeting />
         {agent.data.messages.map((message) => (
           <div
             key={message.id}
@@ -184,18 +232,38 @@ function OwnerChat() {
         {agent.error && <p className="text-sm text-destructive">{agent.error.message}</p>}
       </div>
 
-      <form onSubmit={send} className="sticky bottom-0 flex gap-2 bg-background/80 pb-4 pt-3 backdrop-blur">
-        <Input
-          name="message"
-          placeholder="Escribí un mensaje"
-          autoComplete="off"
-          disabled={isResuming}
-          className="h-11 flex-1 px-4"
-        />
-        <Button type="submit" size="icon-lg" disabled={isResuming} aria-label="Enviar" className="size-11">
-          <ArrowUp aria-hidden="true" />
-        </Button>
-      </form>
+      <div className="sticky bottom-0 grid gap-2 bg-background/80 pb-4 pt-3 backdrop-blur">
+        {suggestions.length > 0 && (
+          <ul aria-label="Sugerencias" className="flex flex-wrap gap-2">
+            {suggestions.map((suggestion) => (
+              <li key={suggestion}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isBusy || isResuming}
+                  onClick={() => void agent.send(suggestion)}
+                  className="h-auto cursor-pointer whitespace-normal rounded-full py-1.5 text-left"
+                >
+                  {suggestion}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <form onSubmit={send} className="flex gap-2">
+          <Input
+            name="message"
+            placeholder="Escribí un mensaje"
+            autoComplete="off"
+            disabled={isResuming}
+            className="h-11 flex-1 px-4"
+          />
+          <Button type="submit" size="icon-lg" disabled={isResuming} aria-label="Enviar" className="size-11">
+            <ArrowUp aria-hidden="true" />
+          </Button>
+        </form>
+      </div>
     </div>
   );
 }
