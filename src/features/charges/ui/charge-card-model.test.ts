@@ -7,6 +7,7 @@ import {
   paymentMessage,
   pollStatusResult,
   receiptFor,
+  whatsAppNumber,
   whatsAppShareUrl,
 } from "./charge-card-model";
 
@@ -107,14 +108,39 @@ describe("paymentMessage", () => {
       "¡Hola Juan! Te paso el link para pagar 2 docenas de medialunas (C-0007) por $85.000: http://localhost:3000/pay/C-0007",
     );
   });
+
+  it("greets the customer by the name the owner wrote in their contact", () => {
+    expect(paymentMessage(CHARGE, "Juancito")).toMatch(/^¡Hola Juancito!/);
+  });
+});
+
+describe("whatsAppNumber", () => {
+  it.each([
+    ["11 2345-6789", "5491123456789"],
+    ["011 2345-6789", "5491123456789"],
+    ["+54 9 11 2345-6789", "5491123456789"],
+    ["54 11 2345 6789", "5491123456789"],
+    ["(351) 456-7890", "5493514567890"],
+  ])("turns the Argentine mobile %s into WhatsApp's international format", (input, expected) => {
+    expect(whatsAppNumber(input)).toBe(expected);
+  });
+
+  it.each([
+    ["too short", "2345-6789"],
+    ["with the 15 prefix, which hides where the area code ends", "11 15 2345-6789"],
+    ["not a number", "Kevin"],
+    ["empty", ""],
+  ])("rejects a number that is %s", (_case, input) => {
+    expect(whatsAppNumber(input)).toBeUndefined();
+  });
 });
 
 describe("whatsAppShareUrl", () => {
-  it("opens WhatsApp with the payment message ready to send", () => {
-    const url = new URL(whatsAppShareUrl(CHARGE));
+  it("opens the customer's WhatsApp chat with the payment message ready to send", () => {
+    const url = new URL(whatsAppShareUrl(CHARGE, { firstName: "Juan", phone: "5491123456789" }));
 
-    expect(`${url.origin}${url.pathname}`).toBe("https://wa.me/");
-    expect(url.searchParams.get("text")).toBe(paymentMessage(CHARGE));
+    expect(`${url.origin}${url.pathname}`).toBe("https://wa.me/5491123456789");
+    expect(url.searchParams.get("text")).toBe(paymentMessage(CHARGE, "Juan"));
   });
 });
 

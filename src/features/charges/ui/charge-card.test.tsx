@@ -75,17 +75,48 @@ describe("ChargeCard", () => {
     expect(errors).not.toHaveBeenCalled();
   });
 
-  it("puts the charge on the customer's phone when the owner sends it", () => {
-    render(
-      <DemoProvider>
-        <ChargeCard charge={CHARGE} />
-        <PhoneProbe />
-      </DemoProvider>,
-    );
+  describe("sending the charge to the customer", () => {
+    function renderCard() {
+      render(
+        <DemoProvider>
+          <ChargeCard charge={CHARGE} />
+          <PhoneProbe />
+        </DemoProvider>,
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Enviar a Juan" }));
+      return screen.getByRole("form", { name: "Contacto de Juan" });
+    }
 
-    fireEvent.click(screen.getByRole("button", { name: "Enviar a Juan" }));
+    it("asks for the customer's contact, with the name already filled in from the charge", () => {
+      const form = renderCard();
 
-    expect(screen.getByLabelText("Bandeja").textContent).toBe("2 docenas de medialunas");
+      expect((within(form).getByLabelText("Nombre") as HTMLInputElement).value).toBe("Juan");
+      expect((within(form).getByLabelText("Apellido") as HTMLInputElement).value).toBe("Pérez");
+      expect((within(form).getByLabelText("Celular") as HTMLInputElement).value).toBe("");
+      expect(screen.getByLabelText("Bandeja").textContent).toBe("");
+    });
+
+    it("does not send until the mobile number is a valid one", () => {
+      const form = renderCard();
+
+      fireEvent.change(within(form).getByLabelText("Celular"), { target: { value: "2345-6789" } });
+      fireEvent.submit(form);
+
+      expect(within(form).getByText(/Revisá el celular/)).toBeTruthy();
+      expect(screen.getByLabelText("Bandeja").textContent).toBe("");
+    });
+
+    it("puts the charge on the customer's phone and offers the real WhatsApp chat with the message ready", () => {
+      const form = renderCard();
+
+      fireEvent.change(within(form).getByLabelText("Celular"), { target: { value: "11 2345-6789" } });
+      fireEvent.submit(form);
+
+      expect(screen.getByLabelText("Bandeja").textContent).toBe("2 docenas de medialunas");
+      const whatsApp = screen.getByRole("link", { name: /Abrir en WhatsApp/ });
+      expect(whatsApp.getAttribute("href")).toMatch(/^https:\/\/wa\.me\/5491123456789\?text=/);
+      expect(whatsApp.getAttribute("target")).toBe("_blank");
+    });
   });
 
   describe("status polling", () => {

@@ -80,14 +80,39 @@ export function chargeFromPart(part: EveMessagePart): ChargeView | undefined {
 export { formatArs };
 
 /** The message the owner sends the payer, in the simulated phone or through WhatsApp. */
-export function paymentMessage(charge: ChargeView): string {
-  const firstName = charge.customer.split(/\s+/)[0] ?? charge.customer;
+export function paymentMessage(charge: ChargeView, firstName = charge.customer.split(/\s+/)[0] ?? charge.customer): string {
   return `¡Hola ${firstName}! Te paso el link para pagar ${charge.description} (${charge.id}) por ${formatArs(charge.amount)}: ${charge.paymentLink}`;
 }
 
-/** A wa.me link that opens WhatsApp with the payment message ready to send. */
-export function whatsAppShareUrl(charge: ChargeView): string {
-  return `https://wa.me/?text=${encodeURIComponent(paymentMessage(charge))}`;
+/**
+ * An Argentine mobile number in WhatsApp's international format (549 + area code + number), or
+ * undefined when it cannot be read with certainty. The local "15" prefix is rejected rather than
+ * guessed: area codes have two to four digits, so it is unclear where they end.
+ */
+export function whatsAppNumber(input: string): string | undefined {
+  const digits = input.replace(/\D/g, "");
+  if (digits.length === 13 && digits.startsWith("549")) {
+    return digits;
+  }
+  if (digits.length === 12 && digits.startsWith("54")) {
+    return `549${digits.slice(2)}`;
+  }
+  if (digits.length === 11 && digits.startsWith("0")) {
+    return `549${digits.slice(1)}`;
+  }
+  if (digits.length === 10 && !digits.startsWith("0")) {
+    return `549${digits}`;
+  }
+  return undefined;
+}
+
+/**
+ * A wa.me link that opens the owner's WhatsApp on the customer's chat, with the payment message
+ * ready. The owner presses send: nothing goes out on its own, and the customer sees a number
+ * they already know.
+ */
+export function whatsAppShareUrl(charge: ChargeView, contact: { firstName: string; phone: string }): string {
+  return `https://wa.me/${contact.phone}?text=${encodeURIComponent(paymentMessage(charge, contact.firstName))}`;
 }
 
 export type Receipt = Readonly<{
