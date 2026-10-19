@@ -1,30 +1,18 @@
-import { ArrowRight, Landmark, MessageSquareText, Radar } from "lucide-react";
+import { ArrowRight, ChevronRight, Landmark, MessageSquareText, Radar } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/core/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/core/ui/card";
 import { WalletSection } from "@/features/wallet/ui";
 
+// The flow at a glance; /how-it-works explains each step.
 const STEPS = [
-  {
-    icon: MessageSquareText,
-    title: "Le pedís el cobro al asistente",
-    description: "«Cobrale $85.000 a Juan Pérez por 2 docenas de medialunas». Arma el cobro y el link de pago.",
-  },
-  {
-    icon: Landmark,
-    title: "Tu cliente paga desde su banco",
-    description: "Con Ripio paga en pesos, sin saber nada de cripto. Vos recibís wARS, pesos digitales en Celo.",
-  },
-  {
-    icon: Radar,
-    title: "El agente concilia solo",
-    description: "Detecta la transferencia en la blockchain, la asigna al cobro correcto y te avisa. Sin planillas.",
-  },
+  { icon: MessageSquareText, title: "Pedís el cobro" },
+  { icon: Landmark, title: "Tu cliente paga en pesos" },
+  { icon: Radar, title: "El agente concilia" },
 ] as const;
 
 export default function HomePage() {
   return (
-    <main className="mx-auto grid max-w-5xl gap-16 px-4 py-16 sm:py-24">
+    <main className="mx-auto grid max-w-5xl gap-16 px-4 py-4">
       <section className="grid justify-items-center gap-6 text-center">
         <span className="rounded-full bg-card px-3 py-1 text-sm text-muted-foreground shadow-sm ring-1 ring-foreground/5">
           Para PyMEs argentinas · Celo + Ripio
@@ -55,27 +43,28 @@ export default function HomePage() {
         <WalletSection />
       </section>
 
-      <section aria-labelledby="how-it-works" className="grid gap-6">
-        <h2 id="how-it-works" className="text-center text-2xl font-semibold tracking-tight">
+      <section aria-labelledby="how-it-works" className="grid justify-items-center gap-4">
+        <h2 id="how-it-works" className="text-2xl font-semibold tracking-tight">
           Cómo funciona
         </h2>
-        <ol className="grid gap-4 sm:grid-cols-3">
-          {STEPS.map(({ icon: Icon, title, description }, index) => (
-            <li key={title}>
-              <Card className="h-full">
-                <CardHeader>
-                  <span className="mb-2 grid size-10 place-items-center rounded-full bg-primary text-primary-foreground">
-                    <Icon className="size-5" aria-hidden="true" />
-                  </span>
-                  <CardTitle>
-                    <span className="text-muted-foreground">{index + 1}.</span> {title}
-                  </CardTitle>
-                  <CardDescription>{description}</CardDescription>
-                </CardHeader>
-              </Card>
+        <ol className="flex flex-col items-center gap-3 sm:flex-row">
+          {STEPS.map(({ icon: Icon, title }, index) => (
+            <li key={title} className="flex flex-col items-center gap-3 sm:flex-row">
+              {index > 0 && (
+                <ChevronRight className="size-4 rotate-90 text-muted-foreground sm:rotate-0" aria-hidden="true" />
+              )}
+              <span className="flex items-center gap-2 rounded-full bg-card px-4 py-2 font-medium shadow-sm ring-1 ring-foreground/5">
+                <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
+                {title}
+              </span>
             </li>
           ))}
         </ol>
+        <Button asChild variant="link">
+          <Link href="/how-it-works">
+            Ver cómo funciona en detalle <ArrowRight aria-hidden="true" />
+          </Link>
+        </Button>
       </section>
     </main>
   );
