@@ -68,6 +68,11 @@ export function fromDecimalString(value: string, currency: Currency): Money {
   return money(whole * 10n ** BigInt(decimals) + fraction, currency);
 }
 
+/** One hundredth of a whole unit (a peso cent), in base units. */
+export function oneCent(currency: Currency): Money {
+  return money(10n ** BigInt(DECIMALS[currency] - 2), currency);
+}
+
 export function equals(left: Money, right: Money): boolean {
   if (left.currency !== right.currency) {
     throw new CurrencyMismatchError(left.currency, right.currency);

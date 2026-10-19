@@ -1,5 +1,5 @@
 import type { Money } from "../../../core/money/money";
-import { type Charge, createCharge, nextChargeReference } from "../domain/charge";
+import { type Charge, createCharge, distinctPendingAmount, nextChargeReference } from "../domain/charge";
 import type { ChargeRepository, PaymentLinkBuilder } from "./ports";
 
 export type CreateChargeResult = Readonly<{
@@ -36,11 +36,12 @@ export function createChargeUseCase(deps: {
       return { charge: existing, paymentLink: deps.buildPaymentLink(existing), created: false };
     }
 
+    const charges = await deps.charges.list();
     const charge = createCharge({
-      id: nextChargeReference(await deps.charges.list()),
+      id: nextChargeReference(charges),
       customer: request.customer,
       description: request.description,
-      amount: request.amount,
+      amount: distinctPendingAmount(request.amount, charges),
       createdAt: deps.now().toISOString(),
       idempotencyKey,
     });

@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { InvalidChargeAmountError, InvalidChargeDetailsError } from "../domain/charge";
 import { InMemoryChargeRepository } from "../infrastructure/in-memory-charge-repository";
-import { wars } from "../testing/fixtures";
+import { money } from "../../../core/money/money";
+import { UNIT, wars } from "../testing/fixtures";
 import { createChargeUseCase } from "./create-charge";
 import type { PaymentLinkBuilder } from "./ports";
 
@@ -91,5 +92,28 @@ describe("createCharge use case", () => {
 
     await expect(createCharge({ ...request, customer: " " })).rejects.toThrow(InvalidChargeDetailsError);
     expect(await charges.list()).toEqual([]);
+  });
+});
+
+describe("createCharge use case, with charges of the same amount", () => {
+  it("makes the second pending charge one cent more, so paying either one is never ambiguous", async () => {
+    const { createCharge } = setup();
+    await createCharge(request);
+
+    const second = await createCharge({ ...request, requestId: "session-1:turn-2", customer: "Kevin Ferreira" });
+
+    expect(second.charge.amount).toEqual(money(85_000n * UNIT + UNIT / 100n, "wARS"));
+  });
+
+  it("returns the same adjusted charge when the agent retries the request", async () => {
+    const { createCharge } = setup();
+    await createCharge(request);
+    const kevin = { ...request, requestId: "session-1:turn-2", customer: "Kevin Ferreira" };
+    const first = await createCharge(kevin);
+
+    const retry = await createCharge(kevin);
+
+    expect(retry.created).toBe(false);
+    expect(retry.charge).toEqual(first.charge);
   });
 });

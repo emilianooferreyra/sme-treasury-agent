@@ -214,15 +214,16 @@ describe("charges feature", () => {
       expect((await charges.simulatePayment("C-0001")).outcome).toBe("already-paid");
     });
 
-    it("leaves the charge pending when another pending charge has the same amount", async () => {
+    it("pays the right charge when two customers were charged the same amount (the second costs a cent more)", async () => {
       const charges = feature();
       await charges.createCharge(request);
-      await charges.createCharge({ ...request, customer: "Ana Gómez" });
+      const ana = await charges.createCharge({ ...request, customer: "Ana Gómez" });
 
       const result = await charges.simulatePayment("C-0002");
 
-      expect(result.outcome).toBe("ambiguous");
-      expect(result.charge.status).toBe("pending");
+      expect(ana.amount).toBe("85000.01");
+      expect(result.outcome).toBe("paid");
+      expect((await charges.getCharge("C-0001"))?.status).toBe("pending");
     });
 
     it("fails for a charge that does not exist", async () => {

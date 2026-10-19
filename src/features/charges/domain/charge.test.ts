@@ -3,6 +3,7 @@ import { CurrencyMismatchError, money } from "../../../core/money/money";
 import { aCharge, aTransfer, UNIT, wars } from "../testing/fixtures";
 import {
   applyPayment,
+  distinctPendingAmount,
   InvalidChargeAmountError,
   InvalidChargeDetailsError,
   isChargeReference,
@@ -172,5 +173,34 @@ describe("nextChargeReference", () => {
 
   it("keeps counting past four digits", () => {
     expect(nextChargeReference([aCharge({ id: "C-9999" })])).toBe("C-10000");
+  });
+});
+
+describe("distinctPendingAmount", () => {
+  const CENT = UNIT / 100n;
+
+  it("keeps the amount when no pending charge has it", () => {
+    expect(distinctPendingAmount(wars(85_000n), [aCharge({ amount: wars(42_500n) })])).toEqual(wars(85_000n));
+  });
+
+  it("adds a cent when a pending charge already has the amount, so a transfer can only match one charge", () => {
+    expect(distinctPendingAmount(wars(85_000n), [aCharge({ amount: wars(85_000n) })])).toEqual(
+      money(85_000n * UNIT + CENT, "wARS"),
+    );
+  });
+
+  it("keeps adding cents until the amount is free", () => {
+    const pending = [
+      aCharge({ id: "C-0001", amount: wars(85_000n) }),
+      aCharge({ id: "C-0002", amount: money(85_000n * UNIT + CENT, "wARS") }),
+    ];
+
+    expect(distinctPendingAmount(wars(85_000n), pending)).toEqual(money(85_000n * UNIT + 2n * CENT, "wARS"));
+  });
+
+  it("ignores paid charges: their amount can be charged again as is", () => {
+    const paid = applyPayment(aCharge({ amount: wars(85_000n) }), aTransfer({ amount: wars(85_000n) }));
+
+    expect(distinctPendingAmount(wars(85_000n), [paid])).toEqual(wars(85_000n));
   });
 });

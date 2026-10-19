@@ -1,4 +1,4 @@
-import { equals, type Money } from "../../../core/money/money";
+import { equals, type Money, money, oneCent } from "../../../core/money/money";
 
 export type ChargeStatus = "pending" | "paid";
 
@@ -106,6 +106,25 @@ export function matchTransfer(charges: readonly Charge[], transfer: IncomingTran
     return { kind: "matched", charge: only };
   }
   return candidates.length === 0 ? { kind: "unmatched" } : { kind: "ambiguous", candidates };
+}
+
+/**
+ * The amount to charge so no two pending charges share one: the ramp link carries no reference,
+ * so the amount is how a transfer finds its charge. A taken amount gets one cent more, then two,
+ * until it is free; paid charges no longer compete.
+ */
+export function distinctPendingAmount(requested: Money, charges: readonly Charge[]): Money {
+  const taken = new Set(
+    charges
+      .filter((charge) => charge.status === "pending" && charge.amount.currency === requested.currency)
+      .map((charge) => charge.amount.amount),
+  );
+  const cent = oneCent(requested.currency).amount;
+  let amount = requested.amount;
+  while (taken.has(amount)) {
+    amount += cent;
+  }
+  return money(amount, requested.currency);
 }
 
 const REFERENCE_PATTERN = /^C-(\d+)$/;
