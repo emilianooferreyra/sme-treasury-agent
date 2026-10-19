@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { Currency } from "../../../core/money/money";
 import { readJsonFile, writeJsonFile } from "../../../core/storage/json-file";
 import type { ChargeRepository } from "../application/ports";
@@ -6,12 +7,45 @@ import type { Charge } from "../domain/charge";
 /** A charge as stored on disk: the bigint amount travels as a decimal string. */
 type StoredCharge = Omit<Charge, "amount"> & { amount: { amount: string; currency: Currency } };
 
+/** Charges saved before they had a creation time get this one: they sort as the oldest. */
+export const UNKNOWN_CREATION_TIME = "1970-01-01T00:00:00.000Z";
+
+// The file is shared, edited by hand and written by older versions, so every record is checked.
+const storedCharge = z.object({
+  id: z.string().min(1),
+  customer: z.string(),
+  description: z.string(),
+  amount: z.object({ amount: z.string().regex(/^\d+$/), currency: z.enum(["wARS", "wBRL"]) }),
+  createdAt: z.string().default(UNKNOWN_CREATION_TIME),
+  status: z.enum(["pending", "paid"]),
+  idempotencyKey: z.string().optional(),
+  paidBy: z.string().optional(),
+  paidAt: z.string().optional(),
+});
+
 function toStored(charge: Charge): StoredCharge {
   return { ...charge, amount: { amount: charge.amount.amount.toString(), currency: charge.amount.currency } };
 }
 
-function fromStored(stored: StoredCharge): Charge {
-  return { ...stored, amount: { amount: BigInt(stored.amount.amount), currency: stored.amount.currency } };
+/** The charge in a stored record, or undefined (with a warning) when the record is damaged. */
+function fromStored(record: unknown): Charge | undefined {
+  const parsed = storedCharge.safeParse(record);
+  if (!parsed.success) {
+    console.warn("Skipping a damaged charge in the charges file", { record, issues: parsed.error.issues });
+    return undefined;
+  }
+  const { amount, idempotencyKey, paidBy, paidAt, ...rest } = parsed.data;
+  return {
+    ...rest,
+    ...(idempotencyKey === undefined ? {} : { idempotencyKey }),
+    ...(paidBy === undefined ? {} : { paidBy }),
+    ...(paidAt === undefined ? {} : { paidAt }),
+    amount: { amount: BigInt(amount.amount), currency: amount.currency },
+  };
+}
+
+function idOf(record: unknown): unknown {
+  return typeof record === "object" && record !== null ? (record as { id?: unknown }).id : undefined;
 }
 
 /**
@@ -30,17 +64,33 @@ export class FileChargeRepository implements ChargeRepository {
   }
 
   async list(): Promise<readonly Charge[]> {
-    return (await readJsonFile<StoredCharge[]>(this.path, [])).map(fromStored);
+    const records = await this.records();
+    if (!records) {
+      console.warn("The charges file is not a list: reading no charges", { path: this.path });
+      return [];
+    }
+    return records.map(fromStored).filter((charge): charge is Charge => charge !== undefined);
   }
 
   async save(charge: Charge): Promise<void> {
-    const charges = [...(await this.list())];
-    const index = charges.findIndex((existing) => existing.id === charge.id);
-    if (index === -1) {
-      charges.push(charge);
-    } else {
-      charges[index] = charge;
+    // Works on the raw records, so a damaged one stays in the file for a person to fix.
+    const stored = await this.records();
+    if (!stored) {
+      throw new Error(`The charges file at ${this.path} is not a list: fix or remove it before saving`);
     }
-    await writeJsonFile(this.path, charges.map(toStored));
+    const records = [...stored];
+    const index = records.findIndex((record) => idOf(record) === charge.id);
+    if (index === -1) {
+      records.push(toStored(charge));
+    } else {
+      records[index] = toStored(charge);
+    }
+    await writeJsonFile(this.path, records);
+  }
+
+  /** The raw records, or undefined when the file holds something other than a list. */
+  private async records(): Promise<readonly unknown[] | undefined> {
+    const stored = await readJsonFile<unknown>(this.path, []);
+    return Array.isArray(stored) ? stored : undefined;
   }
 }
