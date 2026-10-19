@@ -5,7 +5,7 @@
 import { verifyTx } from "@celo/attribution-tags";
 import { createPublicClient, http } from "viem";
 import { registerAgent } from "../src/core/celo/agent-identity.ts";
-import { agentWallet, agentWalletConfigFromEnv, celoChain } from "../src/core/celo/agent-wallet.ts";
+import { agentWallet, agentWalletConfigFromEnv, assertCanPayGas, celoChain } from "../src/core/celo/agent-wallet.ts";
 import { ATTRIBUTION_CODES } from "../src/core/celo/attribution.ts";
 
 // HTTPS, so one transaction is enough; works before the app is deployed. Override with AGENT_URI.
@@ -19,6 +19,12 @@ const publicClient = createPublicClient({ chain, transport: http() });
 const agentURI = process.env.AGENT_URI || DEFAULT_AGENT_URI;
 
 console.log(`Registering ${wallet.account.address} on ${chain.name} with ${agentURI}`);
+
+await assertCanPayGas({
+  address: wallet.account.address,
+  network: config.network,
+  getBalance: (args) => publicClient.getBalance(args),
+});
 
 const { agentId, hash } = await registerAgent({
   write: (request) => wallet.writeContract(request),

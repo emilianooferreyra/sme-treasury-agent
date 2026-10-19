@@ -1,5 +1,5 @@
 import { withAttribution } from "@celo/attribution-tags";
-import { createWalletClient, type Hex, http, type Transport } from "viem";
+import { type Address, createWalletClient, type Hex, http, type Transport } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { celo, celoSepolia } from "viem/chains";
 // Relative imports in this folder keep the .ts extension so scripts/ can run it with plain node.
@@ -31,6 +31,30 @@ export class InvalidCeloNetworkError extends Error {
   constructor(network: string) {
     super(`CELO_NETWORK must be "sepolia" or "mainnet", got "${network}"`);
     this.name = "InvalidCeloNetworkError";
+  }
+}
+
+const SEPOLIA_FAUCET = "https://faucet.celo.org/celo-sepolia";
+
+export class UnfundedAgentWalletError extends Error {
+  constructor(address: Address, network: CeloNetwork) {
+    super(
+      network === "sepolia"
+        ? `The agent wallet ${address} has no CELO for gas. Get free testnet CELO at ${SEPOLIA_FAUCET}`
+        : `The agent wallet ${address} has no CELO for gas. Send it a little CELO on Celo mainnet first.`,
+    );
+    this.name = "UnfundedAgentWalletError";
+  }
+}
+
+/** Fails early, with what to do, when the wallet cannot pay gas (instead of a reverted gas estimate). */
+export async function assertCanPayGas(deps: {
+  address: Address;
+  network: CeloNetwork;
+  getBalance: (args: { address: Address }) => Promise<bigint>;
+}): Promise<void> {
+  if ((await deps.getBalance({ address: deps.address })) === 0n) {
+    throw new UnfundedAgentWalletError(deps.address, deps.network);
   }
 }
 

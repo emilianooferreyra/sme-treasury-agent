@@ -5,9 +5,11 @@ import { describe, expect, it } from "vitest";
 import {
   agentWallet,
   agentWalletConfigFromEnv,
+  assertCanPayGas,
   InvalidAgentKeyError,
   InvalidCeloNetworkError,
   MissingAgentKeyError,
+  UnfundedAgentWalletError,
 } from "./agent-wallet.ts";
 import { ATTRIBUTION_CODES } from "./attribution.ts";
 
@@ -44,6 +46,29 @@ describe("agentWalletConfigFromEnv", () => {
     expect(() => agentWalletConfigFromEnv({ AGENT_PRIVATE_KEY: TEST_KEY, CELO_NETWORK: "alfajores" })).toThrow(
       InvalidCeloNetworkError,
     );
+  });
+});
+
+describe("assertCanPayGas", () => {
+  const address = "0xEA93f4D017BFF57a4E79CFC19b98BDb6CeA4f99c";
+
+  it("passes when the wallet holds CELO", async () => {
+    await expect(assertCanPayGas({ address, network: "sepolia", getBalance: async () => 1n })).resolves.toBeUndefined();
+  });
+
+  it("points to the faucet when a Sepolia wallet is empty", async () => {
+    const empty = assertCanPayGas({ address, network: "sepolia", getBalance: async () => 0n });
+
+    await expect(empty).rejects.toThrow(UnfundedAgentWalletError);
+    await expect(empty).rejects.toThrow(/faucet\.celo\.org\/celo-sepolia/);
+    await expect(empty).rejects.toThrow(address);
+  });
+
+  it("never points a mainnet wallet to the testnet faucet", async () => {
+    const empty = assertCanPayGas({ address, network: "mainnet", getBalance: async () => 0n });
+
+    await expect(empty).rejects.toThrow(UnfundedAgentWalletError);
+    await expect(empty).rejects.not.toThrow(/faucet/);
   });
 });
 
