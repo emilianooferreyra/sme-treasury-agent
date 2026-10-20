@@ -23,3 +23,8 @@ next-env.d.ts
 *.key
 
 .DS_Store
+
+
+.agents/
+.claude/
+openspec/
